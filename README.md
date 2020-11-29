@@ -1,8 +1,6 @@
 # PRISM
 Programming Repository for In Situ Modeling
 
-![PRISM](prism.png)
-
 The Programming Repository for In Situ Modeling (PRISM) is a set of tools for fitting statistics and machine learning models
 to simulation data inside the simulations as they are running. By fitting models inside running simulations, PRISM can be
 used to analyze simulation data that is otherwise inaccessible because of I/O and storage bottlenecks associated with
