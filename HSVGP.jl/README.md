@@ -10,7 +10,7 @@ the road.
 Installation
 ------------
 
-Current usage 
+Current requirement is for local use as shown in examples below. Installation instructions directly from github coming soon.
 
 Example
 ------------
