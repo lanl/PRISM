@@ -48,8 +48,3 @@ PyPlot.xlabel("X")
 PyPlot.ylabel("Y")
 PyPlot.title("Original data Y ")
 ```
-
-License
--------
-
-HSVGP.jl is licensed under the INSERT LICENSE HERE.
