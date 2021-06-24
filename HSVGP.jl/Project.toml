@@ -1,7 +1,7 @@
 name = "HSVGP"
 uuid = "d11b312e-8311-4295-b779-e3d9d197688a"
 authors = ["Michael John Grosskopf <mikegros@lanl.gov>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
