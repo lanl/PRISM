@@ -4,20 +4,19 @@ struct SVGP_data
     y::Array{Float64,1}   # y values for observed data
     n::Int64              # Number of observations
     p::Int64              # Number of input dimensions
-    mean_y::Float64       # mean of data for scaling constant mean prior
-    var_y::Float64        # variance of data for setting nugget
 end
 
 # Constructor for building by feeding X and Y data. 
 #    This should be the most common constructor
-SVGP_data(x::Array{Float64,2}, y::Array{Float64,1}) = SVGP_data(x, y, size(x)[1], size(x)[2], mean(y), var(y))
+SVGP_data(x::Array{Float64,2}, y::Array{Float64,1}) = SVGP_data(x, y, size(x)[1], size(x)[2])
 
 # Constructor for dummy data object
 #    Required for building SVGP object with full data not accessible
-SVGP_data(dummy::String) = SVGP_data(zeros(1,2), [0], 1, 2, 0., 1.)
+SVGP_data(dummy::String) = SVGP_data(zeros(1,2), [0], 1, 2)
 
 # Custom structure for holding parameters for sparse, variational Gaussian process
 mutable struct SVGP_params
+    const_mean::Array{Float64,1}                           # constant mean term
     log_rho::Array{Float64,2}                              # log correlation length for GP
     log_kappa::Array{Float64,1}                            # log GP variance
     log_sigma::Array{Float64,1}                            # log GP error standard deviation
@@ -46,10 +45,58 @@ mutable struct SVGP_params
         kdtree      = KDTree(transpose(inp_data.x))
         idxs, dists = knn(kdtree, transpose(xi), 1);
         init_mean   = [inp_data.y[ii[1]] for ii in idxs];
+        
+        c_mean = [mean(inp_data.y)]
 
-        return new(lrho, lkap, lssq, cholesky(icov).L, init_mean, xi)
+        return new(c_mean, lrho, lkap, lssq, cholesky(icov).L, init_mean, xi)
     end
 end
+
+# Custom structure for holding sparse, variational Gaussian process object
+struct Inference_obj
+    n_inducing::Int64      # Number of inducing points
+    n_functions::Int64     # Number of latent functions to model
+    data::SVGP_data
+    params::Array{SVGP_params,1}
+    likelihood::String     # Label for which likelihood to use. "gaussian" or "poisson" for now
+    ll_function
+end
+
+# Constructor for custom likelihood
+function Inference_obj(x::Array{Float64,2}, y::Array{Float64,1}, ni::Int64, likelihood::String, ll_func, nf::Int64)    
+    Inference_obj(ni, nf, SVGP_data(x,y), [SVGP_params(SVGP_data(x,y), ni) for ii in 1:nf], likelihood, ll_func)
+end
+
+# Constructor from data for general likelihoods
+#     Should often be the 
+function Inference_obj(x::Array{Float64,2}, y::Array{Float64,1}, ni::Int64, likelihood::String)
+    if likelihood == "gaussian"
+        marg_like = gaussian_likelihood
+        n_func    = 1 
+        param_arr = [SVGP_params(SVGP_data(x,y), ni)]
+    elseif likelihood == "poisson"
+        marg_like = poisson_likelihood
+        n_func    = 1 
+        param_arr = [SVGP_params(SVGP_data(x,y), ni)]
+        param_arr[1].inducing_mean = log.(param_arr[1].inducing_mean .+ 1.0);
+        param_arr[1].const_mean    = log.(param_arr[1].const_mean);
+    elseif likelihood == "gev"
+        marg_like = gev_likelihood
+        n_func    = 3 
+        param_arr = [SVGP_params(SVGP_data(x,y), ni) for ii in 1:3]
+    elseif likelihood == "gumbel"
+        marg_like = gumbel_likelihood
+        n_func    = 2 
+        param_arr = [SVGP_params(SVGP_data(x,y), ni) for ii in 1:n_func]
+    else
+        error(string(likelihood," not implemented as a likelihood. It can be implemented by creating the custom log likelihood"))
+    end
+
+    Inference_obj(ni, n_func, SVGP_data(x,y), param_arr, likelihood, marg_like)
+end
+
+# Constructor from data defaulting to Gaussian likelihood
+Inference_obj(x::Array{Float64,2}, y::Array{Float64,1}, ni::Int64) = Inference_obj(x, y, ni, "gaussian")
 
 # Custom structure for holding sparse, variational Gaussian process object
 struct SVGP_obj
@@ -69,12 +116,13 @@ SVGP_obj(x::Array{Float64,2}, y::Array{Float64,1}, ni::Int64) = SVGP_obj(ni, SVG
 #     Should often be the 
 SVGP_obj(x::Array{Float64,2}, y::Array{Float64,1}, ni::Int64, distrib::String) = SVGP_obj(ni, SVGP_data(x,y), SVGP_params(SVGP_data(x,y), ni), distrib)
 
+
 # Hierarchical SVGP structure. Holds global and local SVGPs
 #     Not for distributed calculations as all data is held within the object
 struct HSVGP_obj
     ni_global::Int64
     global_obj::SVGP_obj
-    local_svgps::Array{SVGP_obj, 1}
+    local_svgps::Vector{SVGP_obj}
     n_parts::Int64
     function HSVGP_obj(x::Array{Float64,2}, y::Array{Float64,1}, ni_local::Int64, ni_global::Int64, part_labels::Array{Int64,1}, distrib::String)
         n_parts     = maximum(part_labels)
@@ -87,11 +135,11 @@ end
 
 # Constructor from data defaulting to Gaussian likelihood
 HSVGP_obj(
-    x::Array{Float64,2},
-    y::Array{Float64,1},
+    x::Matrix{Float64},
+    y::Vector{Float64},
     ni_local::Int64,
     ni_global::Int64,
-    part_labels::Array{Int64,1}) = HSVGP_obj(x, y, ni_local, ni_global, part_labels, "gaussian")
+    part_labels::Vector{Int64}) = HSVGP_obj(x, y, ni_local, ni_global, part_labels, "gaussian")
 
 
 # UNUSED SO FAR
