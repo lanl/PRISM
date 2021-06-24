@@ -121,13 +121,13 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
     
         # Step 3
         # Initialize local optimizers
-        lopt_cmean = [[Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.0075)) for jj in 1:n_latent] for ii in 1:len]
-        lopt_lrho  = [[Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.0075)) for jj in 1:n_latent] for ii in 1:len]
-        lopt_lkap  = [[Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.0075)) for jj in 1:n_latent] for ii in 1:len]
-        lopt_lsig  = [[Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.0075)) for jj in 1:n_latent] for ii in 1:len]
-        loptm      = [[Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.01)  ) for jj in 1:n_latent] for ii in 1:len]
-        loptS      = [[Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.002) ) for jj in 1:n_latent] for ii in 1:len]
-        loptx      = [[Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.01)  ) for jj in 1:n_latent] for ii in 1:len]
+        lopt_cmean = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075)) for jj in 1:n_latent] for ii in 1:len]
+        lopt_lrho  = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075)) for jj in 1:n_latent] for ii in 1:len]
+        lopt_lkap  = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075)) for jj in 1:n_latent] for ii in 1:len]
+        lopt_lsig  = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075)) for jj in 1:n_latent] for ii in 1:len]
+        loptm      = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01)  ) for jj in 1:n_latent] for ii in 1:len]
+        loptS      = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.002) ) for jj in 1:n_latent] for ii in 1:len]
+        loptx      = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01)  ) for jj in 1:n_latent] for ii in 1:len]
     
     
         ###################### END OF INITIALIZATION ###############################

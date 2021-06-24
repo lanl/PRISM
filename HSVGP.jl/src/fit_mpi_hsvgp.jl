@@ -119,13 +119,13 @@ function mpifit_hsvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
 
         # Step 3
         # Initialize local optimizers
-        lopt_cmean = [Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.0075)) for ii in 1:len]
-        lopt_lrho  = [Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.0075)) for ii in 1:len]
-        lopt_lkap  = [Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.0075)) for ii in 1:len]
-        lopt_lsig  = [Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.0075)) for ii in 1:len]
-        loptm      = [Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.01)  ) for ii in 1:len]
-        loptS      = [Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.002) ) for ii in 1:len]
-        loptx      = [Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.01)  ) for ii in 1:len]
+        lopt_cmean = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075)) for ii in 1:len]
+        lopt_lrho  = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075)) for ii in 1:len]
+        lopt_lkap  = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075)) for ii in 1:len]
+        lopt_lsig  = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075)) for ii in 1:len]
+        loptm      = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01)  ) for ii in 1:len]
+        loptS      = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.002) ) for ii in 1:len]
+        loptx      = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01)  ) for ii in 1:len]
 
     end # myrank != root
 
@@ -140,13 +140,13 @@ function mpifit_hsvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
             # Root process will send prior_mean prior_cov back to local processes
 
         # Initialize global optimizers
-        opt_cmean = Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.0075))
-        opt_lrho  = Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.0075))
-        opt_lkap  = Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.0075))
-        opt_lsig  = Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.0075))
-        optm      = Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.01)  )
-        optS      = Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.002) )
-        optx      = Flux.Optimiser(ClipValue(grad_clip), ADAM(1. * 0.01)  )
+        opt_cmean = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075))
+        opt_lrho  = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075))
+        opt_lkap  = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075))
+        opt_lsig  = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075))
+        optm      = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01)  )
+        optS      = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.002) )
+        optx      = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01)  )
 
         # Initialize global svgp
         # TODO:
