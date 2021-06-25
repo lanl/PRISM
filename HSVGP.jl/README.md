@@ -1,5 +1,7 @@
 HSVGP.jl
 =========
+[![Build Status][ci-img]](https://github.com/lanl/PRISM/actions)
+[![Codecov][codecov-img]](https://codecov.io/gh/lanl/PRISM)
 
 HSVGP.jl is a sparse variational Gaussian process and hierarchical sparse Gaussian process implementation in Julia. 
 These models have both been implemented for Gaussian and Poisson likelihood data with further likelihoods planned down
@@ -117,3 +119,6 @@ PyPlot.xlabel("X")
 PyPlot.ylabel("Y")
 PyPlot.title("Original data Y ")
 ```
+
+[ci-img]: https://github.com/lanl/PRISM/workflows/HSVGP-CI/badge.svg
+[codecov-img]: https://img.shields.io/codecov/c/github/lanl/PRISM/master.svg?label=codecov

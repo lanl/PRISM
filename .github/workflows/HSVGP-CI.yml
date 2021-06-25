@@ -1,0 +1,40 @@
+name: HSVGP-CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.julia-version == 'nightly' }}
+    strategy:
+      matrix:
+        julia-version: ['1.6', 'nightly']
+        julia-arch: [x86]
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v2
+      # Install julia (several versions).
+      - uses: julia-actions/setup-julia@latest
+        with:
+          version: ${{ matrix.julia-version }}
+      # Build package. Only works with julia >= 1.6.
+      - uses: julia-actions/julia-buildpkg@master
+      # Run tests.
+      # NOTE: This also generates data for computing code coverage statistics.
+      - uses: julia-actions/julia-runtest@master
+        # This is needed because HSVGP.jl is not in the root directory of the
+        # repo.
+        with:
+          project: HSVGP.jl
+      # Get coverage.
+      - uses: julia-actions/julia-processcoverage@v1
+        # Where to find source code (usually assumed to be in `src/`)
+        with:
+          directories: HSVGP.jl/src
+      - uses: codecov/codecov-action@v1
+        with:
+          file: lcov.info
+      - uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: lcov.info

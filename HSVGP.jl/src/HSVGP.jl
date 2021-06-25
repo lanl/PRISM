@@ -3,6 +3,7 @@ module HSVGP
 using LinearAlgebra, Flux, Zygote, Distances, Statistics, Random, LatinHypercubeSampling, NearestNeighbors
 using MPI, CSV, DataFrames, FileIO, Distributions, StatsBase
 using SpecialFunctions: loggamma
+using ProgressBars
 
 include("structs.jl")
 include("prediction.jl")
