@@ -53,15 +53,17 @@ end
 
 
 """
-    fit_svgp!(svgp::SVGP_obj; n_iters=10000, batch_size=100, handoff = 1e20, return_param_traces = false)
+    fit_svgp!(svgp::SVGP_obj; n_iters=10000, batch_size=100, handoff = 1e20, return_param_traces = false, progress_bar=true)
 Fit SVGP to data and update SVGP_obj in place. 
     
     n_iters:                 number of optimization steps
     batch_size:              size of batches for stochastic optimizer
     handoff:                 does not work!! Keep larger than n_iters for now
     return_parameter_traces: flag to indicate whether to return traces for all parameters or not
+    progress_bar:            whether or not to show a progress bar (defaults to true)
 """
-function fit_svgp!(svgp::SVGP_obj; n_iters=10000, batch_size=100, handoff = 1e20, return_param_traces = false)
+function fit_svgp!(svgp::SVGP_obj; n_iters=10000, batch_size=100, handoff=1e20,
+                   return_param_traces=false, progress_bar=true)
 
     grad_clip = 1.e-2
     
@@ -87,7 +89,8 @@ function fit_svgp!(svgp::SVGP_obj; n_iters=10000, batch_size=100, handoff = 1e20
         trace_cmean  = zeros( n_iters )
     end
 
-    for t = 1:n_iters
+    iterator = progress_bar ? ProgressBar(1:n_iters) : 1:n_iters
+    for t in iterator
         if t == handoff
             opt_cmean = Descent(0.05)
             opt_lrho  = Descent(0.05)
