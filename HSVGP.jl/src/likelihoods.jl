@@ -60,12 +60,10 @@ function gev_likelihood(x, y, gp_params::Vector{SVGP_params})
     
     marg_like = 0
     for ii in 1:16  # TODO: Hard coded num of sample for marginalization for now. Should make an argument.
-        param_samps   = [p_par[1] + p_par[2] .* randn(n) for p_par in p_params]
+        param_samps  = [p_par[1] + p_par[2] .* randn(n) for p_par in p_params]
         
-        t_vector      = (1. .+ param_samps[3] .* ( y - param_samps[1]) ./ exp.(param_samps[2]) ) .^ ( -1.0 ./ param_samps[3])
-        new_like_term = sum( -param_samps[2] + (param_samps[3] .+ 1.) .* log.(t_vector) - t_vector )
-        
-        marg_like    += new_like_term
+        t_vector     = (1. .+ param_samps[3] .* ( y - param_samps[1]) ./ exp.(param_samps[2]) ) .^ ( -1.0 ./ param_samps[3])
+        marg_like   += sum( -param_samps[2] + (param_samps[3] .+ 1.) .* log.(t_vector) - t_vector )
     end
 
     marg_like /= 16.
@@ -87,12 +85,10 @@ function gumbel_likelihood(x, y, gp_params::Vector{SVGP_params})
     
     marg_like = 0
     for ii in 1:16  # TODO: Hard coded num of sample for marginalization for now. Should make an argument.
-        param_samps   = [p_par[1] + p_par[2] .* randn(n) for p_par in p_params]
+        param_samps  = [p_par[1] + p_par[2] .* randn(n) for p_par in p_params]
         
-        z_vector      = ( y - param_samps[1]) ./ exp.(param_samps[2]) 
-        new_like_term = sum( -param_samps[2] - z_vector - exp.(-z_vector) )
-        
-        marg_like    += new_like_term
+        z_vector     = ( y - param_samps[1]) ./ exp.(param_samps[2]) 
+        marg_like   += sum( -param_samps[2] - z_vector - exp.(-z_vector) )
     end
 
     marg_like /= 16.
@@ -120,7 +116,7 @@ function create_custom_likelihood(ll_func)
         p_params = [pred_vgp(x, svgp) for svgp in gp_params]
 
         # TODO: Hard coded num of sample for marginalization for now. Should make an argument.
-        const num_mc_samples = 16
+        num_mc_samples = 16
 
         marg_like = 0.0
         for ii in 1:num_mc_samples
