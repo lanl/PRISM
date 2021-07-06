@@ -115,23 +115,21 @@ WARNING: Likely has some serious support issues right now. Need checking on boun
 Returns scalar real value of the marginal likelihood
 """
 function create_custom_likelihood(ll_func)
-    function cust_like(x, y, gp_params::Vector{SVGP_params})
-        n, p     = size(x)
+    return function cust_like(x, y, gp_params::Vector{SVGP_params})
+        n, p = size(x)
         p_params = [pred_vgp(x, svgp) for svgp in gp_params]
-    
-        marg_like = 0
-        for ii in 1:16  # TODO: Hard coded num of sample for marginalization for now. Should make an argument.
-            param_samps   = [p_par[1] + p_par[2] .* randn(n) for p_par in p_params]
-        
-            new_like_term = sum( ll_func(x,y,param_samps) )
 
-            marg_like     = (ii-1.0)/ii * marg_like + 1. / ii * new_like_term
+        # TODO: Hard coded num of sample for marginalization for now. Should make an argument.
+        const num_mc_samples = 16
+
+        marg_like = 0.0
+        for ii in 1:num_mc_samples
+            param_samps = [p_par[1] + p_par[2] .* randn(n) for p_par in p_params]
+            marg_like += sum(ll_func(x, y, param_samps))
         end
         
-        marg_like /= 16.
+        marg_like /= num_mc_samples
         
         return marg_like
     end
-
-    return cust_like
 end
