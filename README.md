@@ -1,4 +1,7 @@
 # PRISM
+[![HSVGP Build Status][hsvgp-ci-img]](https://github.com/lanl/PRISM/actions)
+[![Codecov][codecov-img]](https://codecov.io/gh/lanl/PRISM)
+
 Programming Repository for In Situ Modeling
 
 ![PRISM](prism.png)
@@ -15,3 +18,6 @@ contains tools for interfacing with large-scale scientific simulations written i
 allows the data scientist to construct analysis models in Julia without concern for the implementation details of the
 simulation capability. With these components, PRISM can be used to unlock the full scientific potential of next-generation
 HPC simulations.
+
+[hsvgp-ci-img]: https://github.com/lanl/PRISM/workflows/HSVGP-CI/badge.svg
+[codecov-img]: https://img.shields.io/codecov/c/github/lanl/PRISM/master.svg?label=codecov

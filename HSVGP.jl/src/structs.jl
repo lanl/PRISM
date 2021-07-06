@@ -1,14 +1,14 @@
 # Custom structure for holding data for sparse, variational Gaussian process
 struct SVGP_data
-    x::Array{Float64,2}   # x values for observed data
-    y::Array{Float64,1}   # y values for observed data
+    x::Matrix{Float64}   # x values for observed data
+    y::Vector{Float64}   # y values for observed data
     n::Int64              # Number of observations
     p::Int64              # Number of input dimensions
 end
 
 # Constructor for building by feeding X and Y data. 
 #    This should be the most common constructor
-SVGP_data(x::Array{Float64,2}, y::Array{Float64,1}) = SVGP_data(x, y, size(x)[1], size(x)[2])
+SVGP_data(x::Matrix{Float64}, y::Vector{Float64}) = SVGP_data(x, y, size(x)[1], size(x)[2])
 
 # Constructor for dummy data object
 #    Required for building SVGP object with full data not accessible
@@ -16,13 +16,13 @@ SVGP_data(dummy::String) = SVGP_data(zeros(1,2), [0], 1, 2)
 
 # Custom structure for holding parameters for sparse, variational Gaussian process
 mutable struct SVGP_params
-    const_mean::Array{Float64,1}                           # constant mean term
-    log_rho::Array{Float64,2}                              # log correlation length for GP
-    log_kappa::Array{Float64,1}                            # log GP variance
-    log_sigma::Array{Float64,1}                            # log GP error standard deviation
-    inducing_L::LowerTriangular{Float64,Array{Float64,2}}  # Cholesky of variational covariance
-    inducing_mean::Array{Float64,1}                        # Inducing point mean parameters
-    inducing_locs::Array{Float64,2}                        # Inducing point location parameters
+    const_mean::Vector{Float64}                           # constant mean term
+    log_rho::Matrix{Float64}                              # log correlation length for GP
+    log_kappa::Vector{Float64}                            # log GP variance
+    log_sigma::Vector{Float64}                            # log GP error standard deviation
+    inducing_L::LowerTriangular{Float64,Matrix{Float64}}  # Cholesky of variational covariance
+    inducing_mean::Vector{Float64}                        # Inducing point mean parameters
+    inducing_locs::Matrix{Float64}                        # Inducing point location parameters
     function SVGP_params(inp_data::SVGP_data, n_inducing::Int64)
         ni   = n_inducing
         np   = size(inp_data.x)[2]
@@ -57,19 +57,19 @@ struct Inference_obj
     n_inducing::Int64      # Number of inducing points
     n_functions::Int64     # Number of latent functions to model
     data::SVGP_data
-    params::Array{SVGP_params,1}
+    params::Vector{SVGP_params}
     likelihood::String     # Label for which likelihood to use. "gaussian" or "poisson" for now
     ll_function
 end
 
 # Constructor for custom likelihood
-function Inference_obj(x::Array{Float64,2}, y::Array{Float64,1}, ni::Int64, likelihood::String, ll_func, nf::Int64)    
+function Inference_obj(x::Matrix{Float64}, y::Vector{Float64}, ni::Int64, likelihood::String, ll_func, nf::Int64)
     Inference_obj(ni, nf, SVGP_data(x,y), [SVGP_params(SVGP_data(x,y), ni) for ii in 1:nf], likelihood, ll_func)
 end
 
 # Constructor from data for general likelihoods
 #     Should often be the 
-function Inference_obj(x::Array{Float64,2}, y::Array{Float64,1}, ni::Int64, likelihood::String)
+function Inference_obj(x::Matrix{Float64}, y::Vector{Float64}, ni::Int64, likelihood::String)
     if likelihood == "gaussian"
         marg_like = gaussian_likelihood
         n_func    = 1 
@@ -96,7 +96,9 @@ function Inference_obj(x::Array{Float64,2}, y::Array{Float64,1}, ni::Int64, like
 end
 
 # Constructor from data defaulting to Gaussian likelihood
-Inference_obj(x::Array{Float64,2}, y::Array{Float64,1}, ni::Int64) = Inference_obj(x, y, ni, "gaussian")
+function Inference_obj(x::Matrix{Float64}, y::Vector{Float64}, ni::Int64)
+    return Inference_obj(x, y, ni, "gaussian")
+end
 
 # Custom structure for holding sparse, variational Gaussian process object
 struct SVGP_obj
@@ -110,11 +112,15 @@ struct SVGP_obj
 end
 
 # Constructor from data defaulting to Gaussian likelihood
-SVGP_obj(x::Array{Float64,2}, y::Array{Float64,1}, ni::Int64) = SVGP_obj(ni, SVGP_data(x,y), SVGP_params(SVGP_data(x,y), ni), "gaussian")
+function SVGP_obj(x::Matrix{Float64}, y::Vector{Float64}, ni::Int64)
+    return SVGP_obj(ni, SVGP_data(x,y), SVGP_params(SVGP_data(x,y), ni), "gaussian")
+end
 
 # Constructor from data for general likelihoods
 #     Should often be the 
-SVGP_obj(x::Array{Float64,2}, y::Array{Float64,1}, ni::Int64, distrib::String) = SVGP_obj(ni, SVGP_data(x,y), SVGP_params(SVGP_data(x,y), ni), distrib)
+function SVGP_obj(x::Matrix{Float64}, y::Vector{Float64}, ni::Int64, distrib::String)
+    return SVGP_obj(ni, SVGP_data(x,y), SVGP_params(SVGP_data(x,y), ni), distrib)
+end
 
 
 # Hierarchical SVGP structure. Holds global and local SVGPs
@@ -124,7 +130,14 @@ struct HSVGP_obj
     global_obj::SVGP_obj
     local_svgps::Vector{SVGP_obj}
     n_parts::Int64
-    function HSVGP_obj(x::Array{Float64,2}, y::Array{Float64,1}, ni_local::Int64, ni_global::Int64, part_labels::Array{Int64,1}, distrib::String)
+    function HSVGP_obj(
+        x::Matrix{Float64},
+        y::Vector{Float64},
+        ni_local::Int64,
+        ni_global::Int64,
+        part_labels::Vector{Int64},
+        distrib::String
+    )
         n_parts     = maximum(part_labels)
         local_svgps = [SVGP_obj(x[part_labels .== ii, :], y[part_labels .== ii], ni_local, distrib) for ii in 1:n_parts]
         data        = SVGP_data(x,y)
@@ -134,18 +147,15 @@ struct HSVGP_obj
 end
 
 # Constructor from data defaulting to Gaussian likelihood
-HSVGP_obj(
-    x::Matrix{Float64},
-    y::Vector{Float64},
-    ni_local::Int64,
-    ni_global::Int64,
-    part_labels::Vector{Int64}) = HSVGP_obj(x, y, ni_local, ni_global, part_labels, "gaussian")
+function HSVGP_obj(x::Matrix{Float64}, y::Vector{Float64}, ni_local::Int64, ni_global::Int64, part_labels::Vector{Int64})
+    return HSVGP_obj(x, y, ni_local, ni_global, part_labels, "gaussian")
+end
 
 
 # UNUSED SO FAR
 # Possible struct for carrying optimization info to container inside the full structs
 # mutable struct SVGP_opt
-#     trace_elbo::Array{Float64,1} # Optimization trace for fit
+#     trace_elbo::Vector{Float64} # Optimization trace for fit
 #     function SVGP_opt(x)
 #         return new(x)
 #     end
