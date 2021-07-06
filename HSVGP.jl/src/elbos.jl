@@ -50,7 +50,7 @@ Warning: Untested, may not work yet. In progress.
 
 Returns scalar real value of the elbo
 """
-function inference_elbo_local(x, y, N::Int64, inf_obj::Inference_obj, global_pred::Array{SVGP_params,1})
+function inference_elbo_local(x, y, N::Int64, inf_obj::Inference_obj, global_pred::Vector{SVGP_params})
     elbo = svgp_elbo(x, y, N, inf_obj)
     
     term5 = 0.0

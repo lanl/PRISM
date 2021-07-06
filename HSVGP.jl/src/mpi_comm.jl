@@ -1,4 +1,4 @@
-function send_inducing_points_to_global(xi_low::Array{Float64,2}, yi_low::Array{Float64,1}, root, comm)
+function send_inducing_points_to_global(xi_low::Matrix{Float64}, yi_low::Vector{Float64}, root, comm)
 
     smsg = MPI.Send(xi_low, root, 0, comm)
     # println("xi_low sent to root")
@@ -24,7 +24,7 @@ function receive_inducing_points_in_global(ni_low::Int64, p_low::Int64, recv_id,
 end #receive_inducing_points_in_global
 
 
-function send_prior_to_local(pred_data::Tuple{Array{Float64,1},Array{Float64,1}}, recv_id, comm)
+function send_prior_to_local(pred_data::Tuple{Vector{Float64},Vector{Float64}}, recv_id, comm)
     prior_mean, prior_sd = pred_data
 
     smsg = MPI.Send(prior_mean, recv_id, 2, comm)

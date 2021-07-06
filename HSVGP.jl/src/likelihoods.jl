@@ -4,7 +4,7 @@ Evaluate Gaussian likelihood for SVGP
 
 Returns scalar real value of the marginal likelihood
 """
-function gaussian_likelihood(x, y, gp_params::Array{SVGP_params,1})
+function gaussian_likelihood(x, y, gp_params::Vector{SVGP_params})
     n, p  = size(x)
     sigsq = exp(gp_params[1].log_sigma[1])^2
 
@@ -29,7 +29,7 @@ Monte Carlo approximation to marginal likelihood, sampling from variational dist
 
 Returns scalar real value of the marginal likelihood
 """
-function poisson_likelihood(x, y, gp_params::Array{SVGP_params,1})
+function poisson_likelihood(x, y, gp_params::Vector{SVGP_params})
     n, p         = size(x)
     p_mean, p_sd = pred_vgp(x, gp_params[1])
     
@@ -54,7 +54,7 @@ WARNING: Likely has some serious support issues right now. Need checking on boun
 
 Returns scalar real value of the marginal likelihood
 """
-function gev_likelihood(x, y, gp_params::Array{SVGP_params,1})
+function gev_likelihood(x, y, gp_params::Vector{SVGP_params})
     n, p     = size(x)
     p_params = [pred_vgp(x, svgp) for svgp in gp_params]
     
@@ -81,7 +81,7 @@ GEV with shape parameter = 0. Does not have the support challenges that the GEV 
 
 Returns scalar real value of the marginal likelihood
 """
-function gumbel_likelihood(x, y, gp_params::Array{SVGP_params,1})
+function gumbel_likelihood(x, y, gp_params::Vector{SVGP_params})
     n, p     = size(x)
     p_params = [pred_vgp(x, svgp) for svgp in gp_params]
     
@@ -115,7 +115,7 @@ WARNING: Likely has some serious support issues right now. Need checking on boun
 Returns scalar real value of the marginal likelihood
 """
 function create_custom_likelihood(ll_func)
-    function cust_like(x, y, gp_params::Array{SVGP_params,1})
+    function cust_like(x, y, gp_params::Vector{SVGP_params})
         n, p     = size(x)
         p_params = [pred_vgp(x, svgp) for svgp in gp_params]
     

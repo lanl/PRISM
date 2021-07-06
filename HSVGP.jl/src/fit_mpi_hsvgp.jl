@@ -284,8 +284,8 @@ function mpifit_hsvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
 
             if is_message
                 MPI.Recv!(msg, 0, 8, comm);
-                global msg = convert(Array{Int64,1}, msg)
-                global msg2 = convert(Array{Int64,1}, ones(msg[1]));
+                global msg = convert(Vector{Int64}, msg)
+                global msg2 = convert(Vector{Int64}, ones(msg[1]));
                 #println("process ", myrank, "recieved first message ", msg);
                 MPI.Recv!(msg2, 0, 10+myrank, comm);
                 global msg2 = msg2;
@@ -308,7 +308,7 @@ function mpifit_hsvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
         if myrank == root
             #Select random local partition for batch
             aa = collect(1:n_parts);
-            selection = convert(Array{Int64,1}, zeros(n_batch));
+            selection = convert(Vector{Int64}, zeros(n_batch));
             StatsBase.efraimidis_ares_wsample_norep!(aa, wts, selection)
             part_split_curr = [intersect(part_split[ii], selection) for ii in 1:(mysize-1)];
             wts[selection] .= 0;
@@ -373,8 +373,8 @@ function mpifit_hsvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
             #println("process ", myrank, "message recieved? ", is_message)
             if is_message
                 MPI.Recv!(msg, 0, 8, comm);
-                global msg = convert(Array{Int64,1}, msg);
-                global msg2 = convert(Array{Int64,1}, ones(msg[1]));
+                global msg = convert(Vector{Int64}, msg);
+                global msg2 = convert(Vector{Int64}, ones(msg[1]));
                 #println("process ", myrank, "recieved first message ", msg);
                 MPI.Recv!(msg2, 0, 10+myrank, comm);
                 global msg2 = msg2;
