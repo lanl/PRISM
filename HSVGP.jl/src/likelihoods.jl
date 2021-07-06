@@ -120,7 +120,7 @@ function create_custom_likelihood(ll_func)
         p_params = [pred_vgp(x, svgp) for svgp in gp_params]
 
         # TODO: Hard coded num of sample for marginalization for now. Should make an argument.
-        const num_mc_samples = 16
+        num_mc_samples = 16
 
         marg_like = 0.0
         for ii in 1:num_mc_samples
