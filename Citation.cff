@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Lawrence"
+  given-names: "Earl"
+- family-names: "Urban"
+  given-names: "Nathan"
+- family-names: "Grosskopf"
+  given-names: "Michael"
+- family-names: "Klein"
+  given-names: "Natalie"
+- family-names: "Lui"
+  given-names: "Arthur"
+- family-names: "Rumsey"
+  given-names: "Kelin"
+- family-names: "Dutta"
+  given-names: "Soumya"
+- family-names: "Tang"
+  given-names: "Li"
+- family-names: "Hazarika"
+  given-names: "Subhashis"
+- family-names: "Wang"
+  given-names: "Yu"
+title: "PRISM"
+version: 0.2.1
+date-released:2021-08-19
+url: "https://github.com/lanl/PRISM"
