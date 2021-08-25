@@ -3,6 +3,7 @@ TributaryPCA.jl
 
 TributaryPCA.jl is a Julia implementation of the AdaOja straming PCA algorithm in a distributed computing setting with MPI. 
 
+![TributaryPCA](trib_pca_logo.png)
 
 Example
 ------------
