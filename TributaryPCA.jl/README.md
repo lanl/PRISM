@@ -22,7 +22,7 @@ And, given that a proper MPI version has been installed and configured, run the 
 mpiexec -n 4 julia --project run_oja_mpi.jl 4 mpi_data
 ```
 
-For experiments with the non-distributed Oja's algorithm, using independent multivariate Gaussian data with a spkied covariance matrix:
+For experiments with the non-distributed Oja's algorithm, using independent multivariate Gaussian data with a spiked covariance matrix:
 
 ```julia
 using TributaryPCA
@@ -62,3 +62,5 @@ end
 # final estimate of eigenvec
 V_hat= copy(V_t)
 ```
+
+Developed by Yu Wang during a summer internship with LANL.
