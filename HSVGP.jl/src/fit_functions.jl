@@ -116,7 +116,7 @@ function fit_svgp!(svgp::SVGP_obj; n_iters=10000, batch_size=100, handoff=1e20,
             trace_cmean[t]     = svgp.params.const_mean[1]
             trace_xi[t, :, :]  = svgp.params.inducing_locs
             trace_mn[t, :]     = svgp.params.inducing_mean
-            trace_cov[t, :, :] = diagm(svgp.params.inducing_C)
+            # trace_cov[t, :, :] = Diagonal(svgp.params.inducing_C)
         end
     end
 

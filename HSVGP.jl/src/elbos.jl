@@ -19,7 +19,7 @@ function inference_elbo(x, y, N::Int64, inf_obj::Inference_obj)
         cov_mat_i  = covfn(gp.inducing_locs, gp.inducing_locs, gp)
         cov_mat_i += I * nugg_scale
         
-        S          = diagm(gp.inducing_C) 
+        S          = Diagonal(gp.inducing_C) 
         inv_mat_i  = inv(cov_mat_i)
         m          = gp.inducing_mean
         cm         = gp.const_mean[1]
@@ -126,7 +126,7 @@ function svgp_elbo(x, y, gp_params::SVGP_params, gp_obj::SVGP_obj)
 
     cov_mat_i  = covfn(gp_params.inducing_locs, gp_params.inducing_locs, gp_params)
     cov_mat_i += I * nugg_scale
-    S          = diagm(gp_params.inducing_C)
+    S          = Diagonal(gp_params.inducing_C)
     inv_mat_i  = inv(cov_mat_i)
     m          = gp_params.inducing_mean
     cm         = gp_params.const_mean[1]
