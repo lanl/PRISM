@@ -23,7 +23,7 @@ TributaryPCA.jl is a Julia implementation of the AdaOja streaming PCA algorithm 
 Julienne.jl is a Julia implementation of streaming linear regression with a modified F-test for online change-point detection. This contains an implementation of Myers et al (2016) “Partitioning a Large Simulation as It Runs” which tests, in a streaming fashion, whether an existing linear fit continues to describe new data or whether a new linear fit would provide a better description. 
 
 ### FastGPEstimation
-FastGP estimation is a set of coding tools towards the identification of Gaussian Process hyperparameters using convolutional neural networks and the verification of these parameters using maximum likelihood estimation. 
+FastGP estimation is a set of coding tools towards the identification of Gaussian Process hyperparameters using convolutional neural networks and the verification of these parameters using maximum likelihood estimation (using the anisotropic squared kernel). This set of tools also includes code to extract data from E3SM simulation NetCDF outputs. 
 
 #### Helper Functions included in this package
 
