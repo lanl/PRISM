@@ -20,7 +20,7 @@ mutable struct SVGP_params
     log_rho::Matrix{Float64}                              # log correlation length for GP
     log_kappa::Vector{Float64}                            # log GP variance
     log_sigma::Vector{Float64}                            # log GP error standard deviation
-    inducing_L::LowerTriangular{Float64,Matrix{Float64}}  # Cholesky of variational covariance
+    inducing_C::Vector{Float64}                           # Diagonal variational covariance
     inducing_mean::Vector{Float64}                        # Inducing point mean parameters
     inducing_locs::Matrix{Float64}                        # Inducing point location parameters
     function SVGP_params(inp_data::SVGP_data, n_inducing::Int64)
@@ -35,7 +35,7 @@ mutable struct SVGP_params
         # TODO: More elegent way to do this. 
         lkap = [log(var(inp_data.y))]
         lssq = [-4.0]
-        icov = 0.1 * I + zeros(ni, ni);
+        icov = 100. * ones(ni);
 
         # Initialize inducing point locations to be a Latin hypercube across the domain
         x_range = [(minimum(inp_data.x[:,ii]), maximum(inp_data.x[:,ii])) for ii in 1:np]
@@ -48,7 +48,7 @@ mutable struct SVGP_params
         
         c_mean = [mean(inp_data.y)]
 
-        return new(c_mean, lrho, lkap, lssq, cholesky(icov).L, init_mean, xi)
+        return new(c_mean, lrho, lkap, lssq, icov, init_mean, xi)
     end
 end
 

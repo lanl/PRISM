@@ -41,7 +41,7 @@ function fit_inference!(inf_obj::Inference_obj; n_iters=10000, batch_size=100, h
             Flux.Optimise.update!(opt_lkap[ii],  inf_obj.params[ii].log_kappa,     -grads.params[ii][].log_kappa)
             Flux.Optimise.update!(opt_lsig[ii],  inf_obj.params[ii].log_sigma,     -grads.params[ii][].log_sigma)
             Flux.Optimise.update!(optm[ii],      inf_obj.params[ii].inducing_mean, -grads.params[ii][].inducing_mean)
-            Flux.Optimise.update!(optS[ii],      inf_obj.params[ii].inducing_L,    -LowerTriangular(grads.params[ii][].inducing_L) )
+            Flux.Optimise.update!(optS[ii],      inf_obj.params[ii].inducing_C,    -grads.params[ii][].inducing_C)
             Flux.Optimise.update!(optx[ii],      inf_obj.params[ii].inducing_locs, -grads.params[ii][].inducing_locs)
         end
 
@@ -82,7 +82,7 @@ function fit_svgp!(svgp::SVGP_obj; n_iters=10000, batch_size=100, handoff=1e20,
     if return_param_traces
         trace_xi     = zeros( n_iters, size(svgp.params.inducing_locs)[1], size(svgp.params.inducing_locs)[2] )
         trace_mn     = zeros( n_iters, size(svgp.params.inducing_mean)[1] )
-        trace_cov    = zeros( n_iters, size(svgp.params.inducing_L)[1], size(svgp.params.inducing_L)[2] )
+        trace_cov    = zeros( n_iters, size(svgp.params.inducing_C)[1] )
         trace_lrho   = zeros( n_iters, size(svgp.params.log_rho)[2] )
         trace_lkappa = zeros( n_iters )
         trace_lsigma = zeros( n_iters )
@@ -108,7 +108,7 @@ function fit_svgp!(svgp::SVGP_obj; n_iters=10000, batch_size=100, handoff=1e20,
         Flux.Optimise.update!(opt_lkap,  svgp.params.log_kappa,     -grads.log_kappa)
         Flux.Optimise.update!(opt_lsig,  svgp.params.log_sigma,     -grads.log_sigma)
         Flux.Optimise.update!(optm,      svgp.params.inducing_mean, -grads.inducing_mean)
-        Flux.Optimise.update!(optS,      svgp.params.inducing_L,    -LowerTriangular(grads.inducing_L) )
+        Flux.Optimise.update!(optS,      svgp.params.inducing_C,    -grads.inducing_C )
         Flux.Optimise.update!(optx,      svgp.params.inducing_locs, -grads.inducing_locs)
 
         trace_elbo[t]        = svgp_elbo(svgp.data.x[inds,:], svgp.data.y[inds], svgp.params, svgp)
@@ -116,7 +116,7 @@ function fit_svgp!(svgp::SVGP_obj; n_iters=10000, batch_size=100, handoff=1e20,
             trace_cmean[t]     = svgp.params.const_mean[1]
             trace_xi[t, :, :]  = svgp.params.inducing_locs
             trace_mn[t, :]     = svgp.params.inducing_mean
-            trace_cov[t, :, :] = Hermitian(svgp.params.inducing_L * transpose(svgp.params.inducing_L))
+            trace_cov[t, :, :] = diagm(svgp.params.inducing_C)
         end
     end
 
@@ -186,7 +186,7 @@ function fit_hsvgp!(hsvgp::HSVGP_obj; n_iters=10000, batch_size=100, rep_cycles 
                 Flux.Optimise.update!(lopt_lkap[pp],  hsvgp.local_svgps[pp].params.log_kappa,     -grads.log_kappa)
                 Flux.Optimise.update!(lopt_lsig[pp],  hsvgp.local_svgps[pp].params.log_sigma,     -grads.log_sigma)
                 Flux.Optimise.update!(loptm[pp],      hsvgp.local_svgps[pp].params.inducing_mean, -grads.inducing_mean)
-                Flux.Optimise.update!(loptS[pp],      hsvgp.local_svgps[pp].params.inducing_L,    -LowerTriangular(grads.inducing_L) )
+                Flux.Optimise.update!(loptS[pp],      hsvgp.local_svgps[pp].params.inducing_C,    -grads.inducing_C)
                 Flux.Optimise.update!(loptx[pp],      hsvgp.local_svgps[pp].params.inducing_locs, -grads.inducing_locs)
                 trace_l[pp][t] = svgp_elbo_local(
                     hsvgp.local_svgps[pp].data.x[inds,:],
@@ -212,7 +212,7 @@ function fit_hsvgp!(hsvgp::HSVGP_obj; n_iters=10000, batch_size=100, rep_cycles 
                 Flux.Optimise.update!(opt_lkap,  hsvgp.global_obj.params.log_kappa,     -grads.log_kappa)
                 Flux.Optimise.update!(opt_lsig,  hsvgp.global_obj.params.log_sigma,     -grads.log_sigma)
                 Flux.Optimise.update!(optm,      hsvgp.global_obj.params.inducing_mean, -grads.inducing_mean)
-                Flux.Optimise.update!(optS,      hsvgp.global_obj.params.inducing_L,    -LowerTriangular(grads.inducing_L) )
+                Flux.Optimise.update!(optS,      hsvgp.global_obj.params.inducing_C,    -grads.inducing_C)
                 Flux.Optimise.update!(optx,      hsvgp.global_obj.params.inducing_locs, -grads.inducing_locs)
             end
         end

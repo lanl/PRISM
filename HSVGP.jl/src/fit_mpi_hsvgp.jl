@@ -186,7 +186,7 @@ function mpifit_hsvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
             Flux.Optimise.update!(opt_lkap,  global_svgp.params.log_kappa,     -grads.log_kappa)
             Flux.Optimise.update!(opt_lsig,  global_svgp.params.log_sigma,     -grads.log_sigma)
             Flux.Optimise.update!(optm,      global_svgp.params.inducing_mean, -grads.inducing_mean)
-            Flux.Optimise.update!(optS,      global_svgp.params.inducing_L,    -LowerTriangular(grads.inducing_L) )
+            Flux.Optimise.update!(optS,      global_svgp.params.inducing_C,    -grads.inducing_C)
             Flux.Optimise.update!(optx,      global_svgp.params.inducing_locs, -grads.inducing_locs)
             # Sending prior_mean, prior_cov to local process ###################
             send_prior_to_local( pred_vgp(xi_low, global_svgp.params), recv_id, comm)
@@ -249,7 +249,7 @@ function mpifit_hsvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                     Flux.Optimise.update!(lopt_lkap[ii],  local_svgps[ii].params.log_kappa,     -grads.log_kappa)
                     Flux.Optimise.update!(lopt_lsig[ii],  local_svgps[ii].params.log_sigma,     -grads.log_sigma)
                     Flux.Optimise.update!(loptm[ii],      local_svgps[ii].params.inducing_mean, -grads.inducing_mean)
-                    Flux.Optimise.update!(loptS[ii],      local_svgps[ii].params.inducing_L,    -LowerTriangular(grads.inducing_L) )
+                    Flux.Optimise.update!(loptS[ii],      local_svgps[ii].params.inducing_C,    -grads.inducing_C)
                     Flux.Optimise.update!(loptx[ii],      local_svgps[ii].params.inducing_locs, -grads.inducing_locs)
                     # # Sending prior_mean, prior_cov to local process ###################
                     # send_prior_to_local( pred_vgp(xi_low, global_svgp.params[jj]), recv_id, comm)
@@ -348,7 +348,7 @@ function mpifit_hsvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                     Flux.Optimise.update!(opt_lkap,  global_svgp.params.log_kappa,     -grads.log_kappa)
                     Flux.Optimise.update!(opt_lsig,  global_svgp.params.log_sigma,     -grads.log_sigma)
                     Flux.Optimise.update!(optm,      global_svgp.params.inducing_mean, -grads.inducing_mean)
-                    Flux.Optimise.update!(optS,      global_svgp.params.inducing_L,    -LowerTriangular(grads.inducing_L) )
+                    Flux.Optimise.update!(optS,      global_svgp.params.inducing_C,    -grads.inducing_C)
                     Flux.Optimise.update!(optx,      global_svgp.params.inducing_locs, -grads.inducing_locs)
                 end # for sub_iter
                 # println("global ELBO optimized")

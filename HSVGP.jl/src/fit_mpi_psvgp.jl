@@ -221,7 +221,7 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                     Flux.Optimise.update!(lopt_lkap[ii][jj],  local_svgps[ii].params[jj].log_kappa,     -grads.params[jj][].log_kappa)
                     Flux.Optimise.update!(lopt_lsig[ii][jj],  local_svgps[ii].params[jj].log_sigma,     -grads.params[jj][].log_sigma)
                     Flux.Optimise.update!(loptm[ii][jj],      local_svgps[ii].params[jj].inducing_mean, -grads.params[jj][].inducing_mean)
-                    Flux.Optimise.update!(loptS[ii][jj],      local_svgps[ii].params[jj].inducing_L,    -LowerTriangular(grads.params[jj][].inducing_L) )
+                    Flux.Optimise.update!(loptS[ii][jj],      local_svgps[ii].params[jj].inducing_C,    -grads.params[jj][].inducing_C)
                     Flux.Optimise.update!(loptx[ii][jj],      local_svgps[ii].params[jj].inducing_locs, -grads.params[jj][].inducing_locs)
                 end
                 # end
