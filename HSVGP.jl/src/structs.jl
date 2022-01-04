@@ -35,7 +35,7 @@ mutable struct SVGP_params
         # TODO: More elegent way to do this. 
         lkap = [log(var(inp_data.y))]
         lssq = [-4.0]
-        icov = 100. * ones(ni);
+        icov = log(100.) * ones(ni);
 
         # Initialize inducing point locations to be a Latin hypercube across the domain
         x_range = [(minimum(inp_data.x[:,ii]), maximum(inp_data.x[:,ii])) for ii in 1:np]
