@@ -41,7 +41,7 @@ function pred_vgp(x_pred, gp_obj::SVGP_obj)
     gp_params = gp_obj.params
     opt_xi    = gp_params.inducing_locs
     opt_m     = gp_params.inducing_mean
-    opt_cov   = gp_params.inducing_C)
+    opt_cov   = diagm(gp_params.inducing_C)
 
     ni, nd    = size(opt_xi)
 
