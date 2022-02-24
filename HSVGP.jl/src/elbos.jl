@@ -61,7 +61,7 @@ function inference_elbo_local(x, y, N::Int64, inf_obj::Inference_obj, global_pre
 
         term5 -=  0.5 * size(prior_sd)[1] * log(2.0*π)
         term5 -=  sum( log.(prior_sd) )
-        term5 -=  0.5 * sum( resid' * (resid ./ prior_sd) )
+        term5 -=  0.5 * sum( resid' * (resid ./ prior_sd .^ 2) )
     end
 
     return elbo + term5
@@ -153,7 +153,7 @@ function svgp_elbo_local(x, y, gp_params::SVGP_params, gp_local::SVGP_obj, globa
 
     term5  = -0.5 * size(prior_sd)[1] * log(2.0*π)
     term5 -=  sum( log.(prior_sd) )
-    term5 -=  0.5 * sum( resid' * (resid ./ prior_sd) )
+    term5 -=  0.5 * sum( resid' * (resid ./ prior_sd .^ 2) )
 
     return elbo + term5
 end
