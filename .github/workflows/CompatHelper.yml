@@ -24,7 +24,7 @@ jobs:
       - name: "Run CompatHelper"
         run: |
           import CompatHelper
-          CompatHelper.main(; subdirs=["HSVGP.jl"])
+          CompatHelper.main(; subdirs=["HSVGP.jl", "Julienne.jl", "TributaryPCA.jl"])
         shell: julia --color=yes {0}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
