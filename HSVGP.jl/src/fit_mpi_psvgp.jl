@@ -214,15 +214,15 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                         local_svgps[ii].data.n, 
                         gps
                         ), local_svgps[ii])[1]
-                
+
                 for jj in 1:n_latent
-                    Flux.Optimise.update!(lopt_cmean[ii][jj], local_svgps[ii].params[jj].const_mean,    -grads.params[jj][].const_mean)
-                    Flux.Optimise.update!(lopt_lrho[ii][jj],  local_svgps[ii].params[jj].log_rho,       -grads.params[jj][].log_rho)
-                    Flux.Optimise.update!(lopt_lkap[ii][jj],  local_svgps[ii].params[jj].log_kappa,     -grads.params[jj][].log_kappa)
-                    Flux.Optimise.update!(lopt_lsig[ii][jj],  local_svgps[ii].params[jj].log_sigma,     -grads.params[jj][].log_sigma)
-                    Flux.Optimise.update!(loptm[ii][jj],      local_svgps[ii].params[jj].inducing_mean, -grads.params[jj][].inducing_mean)
-                    Flux.Optimise.update!(loptS[ii][jj],      local_svgps[ii].params[jj].inducing_L,    -LowerTriangular(grads.params[jj][].inducing_L) )
-                    Flux.Optimise.update!(loptx[ii][jj],      local_svgps[ii].params[jj].inducing_locs, -grads.params[jj][].inducing_locs)
+                    Flux.Optimise.update!(lopt_cmean[ii][jj], local_svgps[ii].params[jj].const_mean,    -grads.params[jj].const_mean)
+                    Flux.Optimise.update!(lopt_lrho[ii][jj],  local_svgps[ii].params[jj].log_rho,       -grads.params[jj].log_rho)
+                    Flux.Optimise.update!(lopt_lkap[ii][jj],  local_svgps[ii].params[jj].log_kappa,     -grads.params[jj].log_kappa)
+                    Flux.Optimise.update!(lopt_lsig[ii][jj],  local_svgps[ii].params[jj].log_sigma,     -grads.params[jj].log_sigma)
+                    Flux.Optimise.update!(loptm[ii][jj],      local_svgps[ii].params[jj].inducing_mean, -grads.params[jj].inducing_mean)
+                    Flux.Optimise.update!(loptS[ii][jj],      local_svgps[ii].params[jj].inducing_L,    -LowerTriangular(grads.params[jj].inducing_L) )
+                    Flux.Optimise.update!(loptx[ii][jj],      local_svgps[ii].params[jj].inducing_locs, -grads.params[jj].inducing_locs)
                 end
                 # end
                 # Collecting local ELBO in an array ###########################
@@ -286,7 +286,7 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
         end
 
         # Write trace to a csv file
-        df_return_trace = DataFrame(store_trace)
+        df_return_trace = DataFrame(store_trace, :auto)
         CSV.write(string("./return_trace",mysize,".csv"), df_return_trace)
 
     end # myrank == 0

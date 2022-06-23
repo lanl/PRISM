@@ -36,13 +36,13 @@ function fit_inference!(inf_obj::Inference_obj; n_iters=10000, batch_size=100, h
         grads  = gradient(gps -> inference_elbo(inf_obj.data.x[inds,:], inf_obj.data.y[inds], inf_obj.data.n, gps), inf_obj)[1]
         
         for ii in 1:n_latent
-            Flux.Optimise.update!(opt_cmean[ii], inf_obj.params[ii].const_mean,    -grads.params[ii][].const_mean)
-            Flux.Optimise.update!(opt_lrho[ii],  inf_obj.params[ii].log_rho,       -grads.params[ii][].log_rho)
-            Flux.Optimise.update!(opt_lkap[ii],  inf_obj.params[ii].log_kappa,     -grads.params[ii][].log_kappa)
-            Flux.Optimise.update!(opt_lsig[ii],  inf_obj.params[ii].log_sigma,     -grads.params[ii][].log_sigma)
-            Flux.Optimise.update!(optm[ii],      inf_obj.params[ii].inducing_mean, -grads.params[ii][].inducing_mean)
-            Flux.Optimise.update!(optS[ii],      inf_obj.params[ii].inducing_L,    -LowerTriangular(grads.params[ii][].inducing_L) )
-            Flux.Optimise.update!(optx[ii],      inf_obj.params[ii].inducing_locs, -grads.params[ii][].inducing_locs)
+            Flux.Optimise.update!(opt_cmean[ii], inf_obj.params[ii].const_mean,    -grads.params[ii].const_mean)
+            Flux.Optimise.update!(opt_lrho[ii],  inf_obj.params[ii].log_rho,       -grads.params[ii].log_rho)
+            Flux.Optimise.update!(opt_lkap[ii],  inf_obj.params[ii].log_kappa,     -grads.params[ii].log_kappa)
+            Flux.Optimise.update!(opt_lsig[ii],  inf_obj.params[ii].log_sigma,     -grads.params[ii].log_sigma)
+            Flux.Optimise.update!(optm[ii],      inf_obj.params[ii].inducing_mean, -grads.params[ii].inducing_mean)
+            Flux.Optimise.update!(optS[ii],      inf_obj.params[ii].inducing_L,    -LowerTriangular(grads.params[ii].inducing_L) )
+            Flux.Optimise.update!(optx[ii],      inf_obj.params[ii].inducing_locs, -grads.params[ii].inducing_locs)
         end
 
         trace_elbo[t]        = inference_elbo(inf_obj.data.x[inds,:], inf_obj.data.y[inds], inf_obj.data.n, inf_obj)
