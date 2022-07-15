@@ -209,8 +209,8 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                 end # select_local
                 
                 grads  = gradient(gps -> inference_elbo(
-                        local_svgps[ii].data.x[inds,:], 
-                        local_svgps[ii].data.y[inds], 
+                        batch_x, 
+                        batch_y, 
                         local_svgps[ii].data.n, 
                         gps
                         ), local_svgps[ii])[1]
