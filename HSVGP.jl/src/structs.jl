@@ -1,5 +1,5 @@
 # Custom structure for holding data for sparse, variational Gaussian process
-struct SVGP_data
+mutable struct SVGP_data
     x::Matrix{Float64}   # x values for observed data
     y::Vector{Float64}   # y values for observed data
     n::Int64              # Number of observations

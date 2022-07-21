@@ -11,13 +11,13 @@ function fit_inference!(inf_obj::Inference_obj; n_iters=10000, batch_size=100, h
     
     grad_clip = 1.e-3
     # Initialize optimizers
-    opt_cmean = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.02)  ) for ii in 1:n_latent]
-    opt_lrho  = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075)) for ii in 1:n_latent]
-    opt_lkap  = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075)) for ii in 1:n_latent]
-    opt_lsig  = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075)) for ii in 1:n_latent]
-    optm      = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01)  ) for ii in 1:n_latent]
-    optS      = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.002) ) for ii in 1:n_latent]
-    optx      = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01)  ) for ii in 1:n_latent]
+    opt_cmean = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.02)  , Flux.Optimise.InvDecay(0.01)) for ii in 1:n_latent]
+    opt_lrho  = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075), Flux.Optimise.InvDecay(0.01)) for ii in 1:n_latent]
+    opt_lkap  = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075), Flux.Optimise.InvDecay(0.01)) for ii in 1:n_latent]
+    opt_lsig  = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075), Flux.Optimise.InvDecay(0.01)) for ii in 1:n_latent]
+    optm      = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01),   Flux.Optimise.InvDecay(0.01)) for ii in 1:n_latent]
+    optS      = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.002),  Flux.Optimise.InvDecay(0.01)) for ii in 1:n_latent]
+    optx      = [Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01),   Flux.Optimise.InvDecay(0.01)) for ii in 1:n_latent]
 
     # Will optimize Cholesky to ensure positive definite
     trace_elbo = zeros(n_iters)
@@ -72,13 +72,13 @@ function fit_svgp!(svgp::SVGP_obj; n_iters=10000, batch_size=100, handoff=1e20,
     grad_clip = 1.e-2
     
     # Initialize optimizers
-    opt_cmean = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.02)  )
-    opt_lrho  = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075))
-    opt_lkap  = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075))
-    opt_lsig  = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075))
-    optm      = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01)  )
-    optS      = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.002) )
-    optx      = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01)  )
+    opt_cmean = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.02),   Flux.Optimise.InvDecay(0.01))
+    opt_lrho  = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075), Flux.Optimise.InvDecay(0.01))
+    opt_lkap  = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075), Flux.Optimise.InvDecay(0.01))
+    opt_lsig  = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075), Flux.Optimise.InvDecay(0.01))
+    optm      = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01),   Flux.Optimise.InvDecay(0.01))
+    optS      = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.002),  Flux.Optimise.InvDecay(0.01))
+    optx      = Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01),   Flux.Optimise.InvDecay(0.01))
 
     # Will optimize Cholesky to ensure positive definite
     trace_elbo = zeros(n_iters)
