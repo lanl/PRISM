@@ -3,7 +3,7 @@
 Obtain predictions from variational Gaussian process at locations x_pred. 
 Returns tuple with predicted means and predicted standard deviations
 """
-function pred_vgp(x_pred, gp_params::SVGP_params; full_cov=false)
+function pred_vgp(x_pred, gp_params::SVGP_params; full_cov=false, include_noise=false)
     opt_xi    = gp_params.inducing_locs
     opt_m     = gp_params.inducing_mean
     opt_cov   = Hermitian(gp_params.inducing_L * transpose(gp_params.inducing_L))
@@ -27,6 +27,10 @@ function pred_vgp(x_pred, gp_params::SVGP_params; full_cov=false)
     p_mean = cross_inv' * (opt_m .- gp_params.const_mean[1]) .+ gp_params.const_mean[1] 
     p_cov  = cov_pred + cross_inv' * ( opt_cov - cov_mat_i) * cross_inv;
 
+    if include_noise
+        p_cov = p_cov + sigsq * I
+    end
+    
     if full_cov
         return p_mean, p_cov
     else
@@ -41,7 +45,7 @@ Returns tuple with predicted means and predicted standard deviations.
 Included for backward compatibility, but only part of gp_obj used is the params
 """
 
-function pred_vgp(x_pred, gp_obj::SVGP_obj; full_cov=false)
+function pred_vgp(x_pred, gp_obj::SVGP_obj; full_cov=false, include_noise=false)
     gp_params = gp_obj.params
     opt_xi    = gp_params.inducing_locs
     opt_m     = gp_params.inducing_mean
@@ -65,6 +69,10 @@ function pred_vgp(x_pred, gp_obj::SVGP_obj; full_cov=false)
     
     p_mean = cross_inv' * (opt_m .- gp_params.const_mean[1]) .+ gp_params.const_mean[1]
     p_cov  = cov_pred + cross_inv' * ( opt_cov - cov_mat_i) * cross_inv;
+
+    if include_noise
+        p_cov = p_cov + sigsq * I
+    end
 
     if full_cov
         return p_mean, p_cov
