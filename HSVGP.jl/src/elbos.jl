@@ -19,7 +19,7 @@ function inference_elbo(x, y, N::Int64, inf_obj::Inference_obj)
         cov_mat_i  = covfn(gp.inducing_locs, gp.inducing_locs, gp)
         cov_mat_i += I * nugg_scale
         
-        S          = Hermitian(gp.inducing_L * transpose(gp.inducing_L) )
+        S          = Hermitian(gp.inducing_L * transpose(gp.inducing_L) ) + nugg_scale * I
         inv_mat_i  = inv(cov_mat_i)
         m          = gp.inducing_mean
         cm         = gp.const_mean[1]
@@ -58,7 +58,7 @@ function inference_elbo(x, y, N::Int64, inf_obj::Inference_obj, prior_obj::Infer
         pm, cov_mat_i  = pred_vgp(gp.inducing_locs, prior_gp, full_cov=true)
         cov_mat_i     += I * nugg_scale
         
-        S          = Hermitian(gp.inducing_L * transpose(gp.inducing_L) )
+        S          = Hermitian(gp.inducing_L * transpose(gp.inducing_L) ) + nugg_scale * I
         inv_mat_i  = inv(cov_mat_i)
         m          = gp.inducing_mean .+ gp.const_m
         n_inducing = length(gp.inducing_mean)
@@ -164,7 +164,7 @@ function svgp_elbo(x, y, gp_params::SVGP_params, gp_obj::SVGP_obj)
 
     cov_mat_i  = covfn(gp_params.inducing_locs, gp_params.inducing_locs, gp_params)
     cov_mat_i += I * nugg_scale
-    S          = Hermitian(gp_params.inducing_L * transpose(gp_params.inducing_L) )
+    S          = Hermitian(gp_params.inducing_L * transpose(gp_params.inducing_L) ) + nugg_scale * I
     inv_mat_i  = inv(cov_mat_i)
     m          = gp_params.inducing_mean
     cm         = gp_params.const_mean[1]
@@ -212,7 +212,7 @@ function svgp_elbo(x, y, gp_params::SVGP_params, gp_obj::SVGP_obj, prior_gp::SVG
 
     cov_mat_i  = pr_sd
     cov_mat_i += I * nugg_scale
-    S          = Hermitian(gp_params.inducing_L * transpose(gp_params.inducing_L) )
+    S          = Hermitian(gp_params.inducing_L * transpose(gp_params.inducing_L) ) + nugg_scale * I
     inv_mat_i  = inv(cov_mat_i)
     m          = gp_params.inducing_mean .+ gp_params.const_mean[1]
 

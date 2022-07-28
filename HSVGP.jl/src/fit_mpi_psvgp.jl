@@ -19,7 +19,7 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
         ni         = 5,               # Number of input dimensions
         batch_size = 20,              # Number of points used in updating local ELBO
         n_iters    = 2000,
-        frac_local = 0.75
+        frac_local = 0.2
         )
 
     #TODO:
@@ -157,12 +157,13 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                     send_y  = local_svgps[tag_ind].data.y[inds]
                     smsg    = MPI.Send(send_x, recv_id, length(part_split[recv_id+1])+1, comm)
                     smsg    = MPI.Send(send_y, recv_id, length(part_split[recv_id+1])+2, comm)
+                    # println(string(rank_ind-1, " sending to ", recv_id, " requested with tag ", tag_ind, " first value of ", send_y[1]))
                     is_request, recv_id, tag_ind = check_for_query(comm)
                 end
                 
                 # Step 5
                 # Select either local data or neighbor data
-                select_local = rand(1)[1] < frac_local
+                select_local = rand(1)[1] < ( 5*frac_local / (5*frac_local + 5/4 * (1 - frac_local) * length(part_nbors[rank_ind][ii])) )
                 if select_local
                     inds    = rand(1:size(local_svgps[ii].data.y)[1], batch_size)
                     batch_x = local_svgps[ii].data.x[inds,:]
@@ -182,6 +183,7 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                         # Query neighbor for data
                         smsg     = MPI.Send([0], nbor_ind - 1, part_ind, comm) 
                         got_data = false
+                        # println(string(rank_ind-1," partition ",ii," querying ", nbor_ind - 1, " with tag ", part_ind))
                         while !got_data
                             is_request, recv_id, tag_ind = check_for_query(comm)
                             if is_request
@@ -194,6 +196,7 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                                     send_y  = local_svgps[tag_ind].data.y[inds]
                                     smsg    = MPI.Send(send_x, recv_id, length(part_split[recv_id+1])+1, comm)
                                     smsg    = MPI.Send(send_y, recv_id, length(part_split[recv_id+1])+2, comm)
+                                    # println(string(rank_ind-1, " sending to ", recv_id, " requested with tag ", tag_ind, " first value of ", send_y[1]))
                                 end
                                 if tag_ind > len
                                     batch_x  = zeros(batch_size, n_dims)
@@ -202,6 +205,7 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                                     batch_y  = zeros(batch_size)
                                     rmsg     = MPI.Recv!(batch_y, recv_id, len+2, comm)
                                     got_data = true
+                                    # println(string(rank_ind-1, " got data from ", recv_id, " with first value of ", batch_y[1]))
                                 end # tag_ind > len
                             end # is_request
                         end # !got_data
@@ -211,7 +215,7 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                 grads  = gradient(gps -> inference_elbo(
                         batch_x, 
                         batch_y, 
-                        local_svgps[ii].data.n, 
+                        round(Int64, local_svgps[ii].data.n / ( 5*frac_local / (5*frac_local + 5/4 * (1 - frac_local) * length(part_nbors[rank_ind][ii])) )), 
                         gps
                         ), local_svgps[ii])[1]
 
