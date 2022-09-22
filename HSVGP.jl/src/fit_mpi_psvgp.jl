@@ -121,13 +121,13 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
     
         # Step 3
         # Initialize local optimizers
-        lopt_cmean = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075)) for jj in 1:n_latent] for ii in 1:len]
-        lopt_lrho  = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075)) for jj in 1:n_latent] for ii in 1:len]
-        lopt_lkap  = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075)) for jj in 1:n_latent] for ii in 1:len]
-        lopt_lsig  = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075)) for jj in 1:n_latent] for ii in 1:len]
-        loptm      = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01)  ) for jj in 1:n_latent] for ii in 1:len]
-        loptS      = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.002) ) for jj in 1:n_latent] for ii in 1:len]
-        loptx      = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01)  ) for jj in 1:n_latent] for ii in 1:len]
+        lopt_cmean = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075), Flux.Optimise.InvDecay(0.01)) for jj in 1:n_latent] for ii in 1:len]
+        lopt_lrho  = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075), Flux.Optimise.InvDecay(0.01)) for jj in 1:n_latent] for ii in 1:len]
+        lopt_lkap  = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075), Flux.Optimise.InvDecay(0.01)) for jj in 1:n_latent] for ii in 1:len]
+        lopt_lsig  = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.0075), Flux.Optimise.InvDecay(0.01)) for jj in 1:n_latent] for ii in 1:len]
+        loptm      = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01)  , Flux.Optimise.InvDecay(0.01)) for jj in 1:n_latent] for ii in 1:len]
+        loptS      = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.002) , Flux.Optimise.InvDecay(0.01)) for jj in 1:n_latent] for ii in 1:len]
+        loptx      = [[Flux.Optimiser(Flux.ClipValue(grad_clip), ADAM(1. * 0.01)  , Flux.Optimise.InvDecay(0.01)) for jj in 1:n_latent] for ii in 1:len]
     
     
         ###################### END OF INITIALIZATION ###############################
@@ -142,6 +142,8 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
             #     print(iter, " ")
             # end
             # println("Iteration: ", iter)
+            batch_x = 0.
+            batch_y = 0.
     
             for ii in 1:len 
                 # Step 4
@@ -165,18 +167,18 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                 # Select either local data or neighbor data
                 select_local = rand(1)[1] < ( 5*frac_local / (5*frac_local + 5/4 * (1 - frac_local) * length(part_nbors[rank_ind][ii])) )
                 if select_local
-                    inds    = rand(1:size(local_svgps[ii].data.y)[1], batch_size)
-                    batch_x = local_svgps[ii].data.x[inds,:]
-                    batch_y = local_svgps[ii].data.y[inds]
+                    inds           = rand(1:size(local_svgps[ii].data.y)[1], batch_size)
+                    global batch_x = local_svgps[ii].data.x[inds,:]
+                    global batch_y = local_svgps[ii].data.y[inds]
                 else
                     nbor = rand(part_nbors[rank_ind][ii])
                     
                     if nbor in part_split[rank_ind]
                         part_ind = filter(aa -> part_split[rank_ind][aa] == nbor, 1:size(part_split[rank_ind])[1])[1]
                         
-                        inds     = rand(1:size(local_svgps[part_ind].data.y)[1], batch_size)
-                        batch_x  = local_svgps[part_ind].data.x[inds,:]
-                        batch_y  = local_svgps[part_ind].data.y[inds]
+                        inds            = rand(1:size(local_svgps[part_ind].data.y)[1], batch_size)
+                        global batch_x  = local_svgps[part_ind].data.x[inds,:]
+                        global batch_y  = local_svgps[part_ind].data.y[inds]
                     else
                         nbor_ind = filter(aa -> nbor in part_split[aa], 1:size(part_split)[1])[1]
                         part_ind = filter(aa -> part_split[nbor_ind][aa] == nbor, 1:size(part_split[nbor_ind])[1])[1]
@@ -199,10 +201,10 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                                     # println(string(rank_ind-1, " sending to ", recv_id, " requested with tag ", tag_ind, " first value of ", send_y[1]))
                                 end
                                 if tag_ind > len
-                                    batch_x  = zeros(batch_size, n_dims)
+                                    global batch_x  = zeros(batch_size, n_dims)
                                     rmsg     = MPI.Recv!(batch_x, recv_id, len+1, comm)
     
-                                    batch_y  = zeros(batch_size)
+                                    global batch_y  = zeros(batch_size)
                                     rmsg     = MPI.Recv!(batch_y, recv_id, len+2, comm)
                                     got_data = true
                                     # println(string(rank_ind-1, " got data from ", recv_id, " with first value of ", batch_y[1]))
