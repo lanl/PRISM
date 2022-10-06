@@ -4,7 +4,7 @@ Evaluate the elbo for optimization of the inference model with a stochastic vari
 
 Returns scalar real value of the elbo
 """
-function inference_elbo(x, y, N::Int64, inf_obj::Inference_obj)
+function inference_elbo(x, y, N, inf_obj::Inference_obj)
     n, p = size(x)
 
     marg_like = inf_obj.ll_function(x, y, inf_obj.params)
@@ -41,7 +41,7 @@ function inference_elbo(x, y, N::Int64, inf_obj::Inference_obj)
     return float(N) / float(n) * marg_like - kl_term + unnecessary_lsigma_term_to_remove_later
 end
 
-function inference_elbo(x, y, N::Int64, inf_obj::Inference_obj, prior_obj::Inference_obj)
+function inference_elbo(x, y, N, inf_obj::Inference_obj, prior_obj::Inference_obj)
     n, p = size(x)
 
     marg_like = inf_obj.ll_function(x, y, inf_obj.params)
@@ -88,7 +88,7 @@ Warning: Untested, may not work yet. In progress.
 
 Returns scalar real value of the elbo
 """
-function inference_elbo_local(x, y, N::Int64, inf_obj::Inference_obj, global_pred::Vector{SVGP_params})
+function inference_elbo_local(x, y, N, inf_obj::Inference_obj, global_pred::Vector{SVGP_params})
     elbo = svgp_elbo(x, y, N, inf_obj)
     
     term5 = 0.0

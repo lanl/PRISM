@@ -17,7 +17,7 @@ WARNING: Currently writes out several jld2 files containing local GPs
 """
 function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
         ni         = 5,               # Number of input dimensions
-        batch_size = 20,              # Number of points used in updating local ELBO
+        batch_size = 5,              # Number of points used in updating local ELBO
         n_iters    = 2000,
         frac_local = 0.2
         )
@@ -100,7 +100,71 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
     data_array = [get_data(part) for part in part_split[rank_ind]]
     len        = length(part_split[rank_ind])
 
+    part_n = deepcopy(part_nbors)
 
+    for ii in 1:len
+        for kk in 1:length(part_nbors[rank_ind][ii])
+            is_request, recv_id, tag_ind = check_for_query(comm)
+            while is_request
+                dummy   = [0]
+                # Receive message to clear out
+                rmsg    = MPI.Recv!(dummy, recv_id, tag_ind, comm) #TODO: Do this better. Shouldn't need to send dummy data.
+                send_n  = size(data_array[tag_ind][1])[1]
+                smsg    = MPI.Send([send_n], recv_id, length(part_split[recv_id+1])+1, comm)
+                is_request, recv_id, tag_ind = check_for_query(comm)
+            end
+
+            nbor = part_nbors[rank_ind][ii][kk]
+            if nbor in part_split[rank_ind]
+                part_ind = filter(aa -> part_split[rank_ind][aa] == nbor, 1:size(part_split[rank_ind])[1])[1]
+                part_n[rank_ind][ii][kk]  = size(data_array[part_ind][1])[1]
+            else
+                nbor_ind = filter(aa -> nbor in part_split[aa], 1:size(part_split)[1])[1]
+                part_ind = filter(aa -> part_split[nbor_ind][aa] == nbor, 1:size(part_split[nbor_ind])[1])[1]
+                # Query neighbor for data
+                smsg     = MPI.Send([0], nbor_ind - 1, part_ind, comm)
+                got_data = false
+                while !got_data
+                    is_request, recv_id, tag_ind = check_for_query(comm)
+                    if is_request
+                        if tag_ind < len+1 # if < len+1 then tag is a partition label
+                            dummy   = [0]
+                            # Receive message to clear out
+                            rmsg    = MPI.Recv!(dummy, recv_id, tag_ind, comm) #TODO: Do this better. Shouldn't need to send dummy data.
+                            send_n  = size(data_array[tag_ind][1])[1]
+                            smsg    = MPI.Send([send_n], recv_id, length(part_split[recv_id+1])+1, comm)
+                        end
+                        if tag_ind > len
+                            recv_n  = [0]
+                            rmsg    = MPI.Recv!(recv_n, recv_id, len+1, comm)
+                            got_data = true
+                            part_n[rank_ind][ii][kk] = recv_n[1]
+                        end # tag_ind > len
+                    end # is_request
+                end # !got_data
+            end
+        end
+    end
+
+    barrier_req = MPI.Ibarrier(comm)
+
+    all_done = false
+    while !all_done
+        is_request, recv_id, tag_ind = check_for_query(comm)
+        if is_request
+            if tag_ind < len+1 # if < len+1 then tag is a partition label
+                dummy   = [0]
+                # Receive message to clear out
+                rmsg    = MPI.Recv!(dummy, recv_id, tag_ind, comm) #TODO: Do this better. Shouldn't need to send dummy data.
+                send_n  = size(data_array[tag_ind][1])[1]
+                smsg    = MPI.Send([send_n], recv_id, length(part_split[recv_id+1])+1, comm)
+            end
+            if tag_ind > len
+                println("Shouldnt get a message sending data! Something is wrong!")
+            end # tag_ind > len
+        end # is_request
+        all_done, barrier_status = MPI.Test!(barrier_req)
+    end # !all_done
 
     # Initializing "trace" array to store ELBO values
     trace_l = [zeros(n_iters) for ii in 1:len] # To collect the local ELBO value
@@ -165,20 +229,28 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                 
                 # Step 5
                 # Select either local data or neighbor data
-                select_local = rand(1)[1] < ( 5*frac_local / (5*frac_local + 5/4 * (1 - frac_local) * length(part_nbors[rank_ind][ii])) )
-                if select_local
+                # TODO: REMOVE - THIS TRANSFORMATION IS ONLY FOR BACKWARD COMPATIBILITY FOR STUDY SCRIPTS
+                frac_local_t = (frac_local - 1.0) / (0.2 - 1.0) # REMOVE THE NEED FOR THIS AFTER STUDY
+                eff_n        = sum(part_n[rank_ind][ii]) * frac_local_t + local_svgps[ii].data.n
+                if myrank == 0
+                    println(part_n[rank_ind][ii])
+                end
+                samp_weights = (part_n[rank_ind][ii] .* frac_local_t) / eff_n
+                select_rand  = rand(1)[1]
+                if select_rand >= sum(samp_weights)
                     inds           = rand(1:size(local_svgps[ii].data.y)[1], batch_size)
-                    global batch_x = local_svgps[ii].data.x[inds,:]
-                    global batch_y = local_svgps[ii].data.y[inds]
+                    batch_x = local_svgps[ii].data.x[inds,:]
+                    batch_y = local_svgps[ii].data.y[inds]
                 else
-                    nbor = rand(part_nbors[rank_ind][ii])
-                    
+                    rind = filter(aaa -> cumsum(samp_weights)[aaa] > select_rand, 1:length(samp_weights))[1]
+                    nbor = part_nbors[rank_ind][ii][rind]
+                     
                     if nbor in part_split[rank_ind]
                         part_ind = filter(aa -> part_split[rank_ind][aa] == nbor, 1:size(part_split[rank_ind])[1])[1]
                         
                         inds            = rand(1:size(local_svgps[part_ind].data.y)[1], batch_size)
-                        global batch_x  = local_svgps[part_ind].data.x[inds,:]
-                        global batch_y  = local_svgps[part_ind].data.y[inds]
+                        batch_x  = local_svgps[part_ind].data.x[inds,:]
+                        batch_y  = local_svgps[part_ind].data.y[inds]
                     else
                         nbor_ind = filter(aa -> nbor in part_split[aa], 1:size(part_split)[1])[1]
                         part_ind = filter(aa -> part_split[nbor_ind][aa] == nbor, 1:size(part_split[nbor_ind])[1])[1]
@@ -201,10 +273,10 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                                     # println(string(rank_ind-1, " sending to ", recv_id, " requested with tag ", tag_ind, " first value of ", send_y[1]))
                                 end
                                 if tag_ind > len
-                                    global batch_x  = zeros(batch_size, n_dims)
+                                    batch_x  = zeros(batch_size, n_dims)
                                     rmsg     = MPI.Recv!(batch_x, recv_id, len+1, comm)
     
-                                    global batch_y  = zeros(batch_size)
+                                    batch_y  = zeros(batch_size)
                                     rmsg     = MPI.Recv!(batch_y, recv_id, len+2, comm)
                                     got_data = true
                                     # println(string(rank_ind-1, " got data from ", recv_id, " with first value of ", batch_y[1]))
@@ -217,7 +289,7 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                 grads  = gradient(gps -> inference_elbo(
                         batch_x, 
                         batch_y, 
-                        round(Int64, local_svgps[ii].data.n / ( 5*frac_local / (5*frac_local + 5/4 * (1 - frac_local) * length(part_nbors[rank_ind][ii])) )), 
+                        eff_n, 
                         gps
                         ), local_svgps[ii])[1]
 
