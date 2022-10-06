@@ -232,13 +232,15 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                 # TODO: REMOVE - THIS TRANSFORMATION IS ONLY FOR BACKWARD COMPATIBILITY FOR STUDY SCRIPTS
                 frac_local_t = (frac_local - 1.0) / (0.2 - 1.0) # REMOVE THE NEED FOR THIS AFTER STUDY
                 eff_n        = sum(part_n[rank_ind][ii]) * frac_local_t + local_svgps[ii].data.n
-                if myrank == 0
-                    println(part_n[rank_ind][ii])
-                end
                 samp_weights = (part_n[rank_ind][ii] .* frac_local_t) / eff_n
                 select_rand  = rand(1)[1]
                 if select_rand >= sum(samp_weights)
-                    inds           = rand(1:size(local_svgps[ii].data.y)[1], batch_size)
+                    # inds           = rand(1:size(local_svgps[ii].data.y)[1], batch_size)
+                    if batch_size > local_svgps[ii].data.n
+                        inds    = rand(1:size(local_svgps[ii].data.y)[1], batch_size)
+                    else
+                        inds    = randperm(size(local_svgps[ii].data.x)[1])[1:batch_size]
+                    end
                     batch_x = local_svgps[ii].data.x[inds,:]
                     batch_y = local_svgps[ii].data.y[inds]
                 else
@@ -247,8 +249,11 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                      
                     if nbor in part_split[rank_ind]
                         part_ind = filter(aa -> part_split[rank_ind][aa] == nbor, 1:size(part_split[rank_ind])[1])[1]
-                        
-                        inds            = rand(1:size(local_svgps[part_ind].data.y)[1], batch_size)
+                        if batch_size > local_svgps[part_ind].data.n
+                            inds            = rand(1:size(local_svgps[part_ind].data.y)[1], batch_size)
+                        else
+                            inds    = randperm(size(local_svgps[part_ind].data.x)[1])[1:batch_size]
+                        end
                         batch_x  = local_svgps[part_ind].data.x[inds,:]
                         batch_y  = local_svgps[part_ind].data.y[inds]
                     else
@@ -265,7 +270,11 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                                     dummy   = [0]
                                     # Receive message to clear out
                                     rmsg    = MPI.Recv!(dummy, recv_id, tag_ind, comm) #TODO: Do this better. Shouldn't need to send dummy data. 
-                                    inds    = rand(1:size(local_svgps[tag_ind].data.y)[1], batch_size)
+                                    if batch_size > local_svgps[tag_ind].data.n
+                                        inds    = rand(1:size(local_svgps[tag_ind].data.y)[1], batch_size)
+                                    else
+                                        inds    = randperm(size(local_svgps[tag_ind].data.x)[1])[1:batch_size]
+                                    end
                                     send_x  = local_svgps[tag_ind].data.x[inds,:]
                                     send_y  = local_svgps[tag_ind].data.y[inds]
                                     smsg    = MPI.Send(send_x, recv_id, length(part_split[recv_id+1])+1, comm)
