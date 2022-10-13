@@ -233,66 +233,82 @@ function mpifit_psvgp(get_data, n_parts, n_dims, bounds_low, bounds_high;
                 frac_local_t = (frac_local - 1.0) / (0.2 - 1.0) # REMOVE THE NEED FOR THIS AFTER STUDY
                 eff_n        = sum(part_n[rank_ind][ii]) * frac_local_t + local_svgps[ii].data.n
                 samp_weights = (part_n[rank_ind][ii] .* frac_local_t) / eff_n
-                select_rand  = rand(1)[1]
-                if select_rand >= sum(samp_weights)
+                rands        = rand(batch_size)
+                select_rand  = [length(filter(bbb -> cumsum(samp_weights)[bbb] > x, 1:length(samp_weights))) > 0 ? filter(bbb -> cumsum(samp_weights)[bbb] > x, 1:length(samp_weights))[1] : 0 for x in rands]
+                batch_x    = zeros(batch_size, size(local_svgps[ii].data.x)[2])
+                batch_y    = zeros(batch_size)
+                local_size = 0
+                if any(select_rand .== 0)
+		    local_size = sum(select_rand .== 0)
                     # inds           = rand(1:size(local_svgps[ii].data.y)[1], batch_size)
-                    if batch_size > local_svgps[ii].data.n
-                        inds    = rand(1:size(local_svgps[ii].data.y)[1], batch_size)
+                    if local_size > local_svgps[ii].data.n
+                        inds    = rand(1:size(local_svgps[ii].data.y)[1], local_size)
                     else
-                        inds    = randperm(size(local_svgps[ii].data.x)[1])[1:batch_size]
+                        inds    = randperm(size(local_svgps[ii].data.x)[1])[1:local_size]
                     end
-                    batch_x = local_svgps[ii].data.x[inds,:]
-                    batch_y = local_svgps[ii].data.y[inds]
-                else
-                    rind = filter(aaa -> cumsum(samp_weights)[aaa] > select_rand, 1:length(samp_weights))[1]
+                    batch_x[1:local_size, :] = local_svgps[ii].data.x[inds,:]
+                    batch_y[1:local_size]    = local_svgps[ii].data.y[inds]
+                end
+                if any(select_rand .!= 0)
+                    rind = filter(aaa -> aaa > 0, select_rand)
                     nbor = part_nbors[rank_ind][ii][rind]
-                     
-                    if nbor in part_split[rank_ind]
-                        part_ind = filter(aa -> part_split[rank_ind][aa] == nbor, 1:size(part_split[rank_ind])[1])[1]
-                        if batch_size > local_svgps[part_ind].data.n
-                            inds            = rand(1:size(local_svgps[part_ind].data.y)[1], batch_size)
+                    ubor = unique(nbor)
+                    nums = [sum(nbor .== uu) for uu in ubor]
+                    for parts in 1:length(ubor)
+                        ibor = ubor[parts]
+                        if ibor in part_split[rank_ind]
+                            part_ind = filter(aa -> part_split[rank_ind][aa] == ibor, 1:size(part_split[rank_ind])[1])[1]
+                            if nums[parts] > local_svgps[part_ind].data.n
+                                inds = rand(1:size(local_svgps[part_ind].data.y)[1], nums[parts])
+                            else
+                                inds = randperm(size(local_svgps[part_ind].data.x)[1])[1:nums[parts]]
+                            end
+                            batch_x[(local_size+1):(local_size+nums[parts]),:] = local_svgps[part_ind].data.x[inds,:]
+                            batch_y[(local_size+1):(local_size+nums[parts])]   = local_svgps[part_ind].data.y[inds]
+                            local_size += nums[parts]
                         else
-                            inds    = randperm(size(local_svgps[part_ind].data.x)[1])[1:batch_size]
-                        end
-                        batch_x  = local_svgps[part_ind].data.x[inds,:]
-                        batch_y  = local_svgps[part_ind].data.y[inds]
-                    else
-                        nbor_ind = filter(aa -> nbor in part_split[aa], 1:size(part_split)[1])[1]
-                        part_ind = filter(aa -> part_split[nbor_ind][aa] == nbor, 1:size(part_split[nbor_ind])[1])[1]
-                        # Query neighbor for data
-                        smsg     = MPI.Send([0], nbor_ind - 1, part_ind, comm) 
-                        got_data = false
-                        # println(string(rank_ind-1," partition ",ii," querying ", nbor_ind - 1, " with tag ", part_ind))
-                        while !got_data
-                            is_request, recv_id, tag_ind = check_for_query(comm)
-                            if is_request
-                                if tag_ind < len+1 # if < len+1 then tag is a partition label
-                                    dummy   = [0]
-                                    # Receive message to clear out
-                                    rmsg    = MPI.Recv!(dummy, recv_id, tag_ind, comm) #TODO: Do this better. Shouldn't need to send dummy data. 
-                                    if batch_size > local_svgps[tag_ind].data.n
-                                        inds    = rand(1:size(local_svgps[tag_ind].data.y)[1], batch_size)
-                                    else
-                                        inds    = randperm(size(local_svgps[tag_ind].data.x)[1])[1:batch_size]
+                            nbor_ind = filter(aa -> ibor in part_split[aa], 1:size(part_split)[1])[1]
+                            part_ind = filter(aa -> part_split[nbor_ind][aa] == ibor, 1:size(part_split[nbor_ind])[1])[1]
+                            # Query neighbor for data
+                            smsg     = MPI.Send([0], nbor_ind - 1, part_ind, comm) 
+                            got_data = false
+                            # println(string(rank_ind-1," partition ",ii," querying ", nbor_ind - 1, " with tag ", part_ind))
+                            while !got_data
+                                is_request, recv_id, tag_ind = check_for_query(comm)
+                                if is_request
+                                    if tag_ind < len+1 # if < len+1 then tag is a partition label
+                                        dummy   = [0]
+                                        # Receive message to clear out
+                                        rmsg    = MPI.Recv!(dummy, recv_id, tag_ind, comm) #TODO: Do this better. Shouldn't need to send dummy data. 
+                                        if batch_size > local_svgps[tag_ind].data.n
+                                            inds    = rand(1:size(local_svgps[tag_ind].data.y)[1], batch_size)
+                                        else
+                                            inds    = randperm(size(local_svgps[tag_ind].data.x)[1])[1:batch_size]
+                                        end
+                                        send_x  = local_svgps[tag_ind].data.x[inds,:]
+                                        send_y  = local_svgps[tag_ind].data.y[inds]
+                                        smsg    = MPI.Send(send_x, recv_id, length(part_split[recv_id+1])+1, comm)
+                                        smsg    = MPI.Send(send_y, recv_id, length(part_split[recv_id+1])+2, comm)
+                                        # println(string(rank_ind-1, " sending to ", recv_id, " requested with tag ", tag_ind, " first value of ", send_y[1]))
                                     end
-                                    send_x  = local_svgps[tag_ind].data.x[inds,:]
-                                    send_y  = local_svgps[tag_ind].data.y[inds]
-                                    smsg    = MPI.Send(send_x, recv_id, length(part_split[recv_id+1])+1, comm)
-                                    smsg    = MPI.Send(send_y, recv_id, length(part_split[recv_id+1])+2, comm)
-                                    # println(string(rank_ind-1, " sending to ", recv_id, " requested with tag ", tag_ind, " first value of ", send_y[1]))
-                                end
-                                if tag_ind > len
-                                    batch_x  = zeros(batch_size, n_dims)
-                                    rmsg     = MPI.Recv!(batch_x, recv_id, len+1, comm)
+                                    if tag_ind > len
+                                        xrecv  = zeros(batch_size, n_dims)
+                                        rmsg   = MPI.Recv!(xrecv, recv_id, len+1, comm)
     
-                                    batch_y  = zeros(batch_size)
-                                    rmsg     = MPI.Recv!(batch_y, recv_id, len+2, comm)
-                                    got_data = true
-                                    # println(string(rank_ind-1, " got data from ", recv_id, " with first value of ", batch_y[1]))
-                                end # tag_ind > len
-                            end # is_request
-                        end # !got_data
-                    end # nbor in part_split[rank_ind]
+                                        yrecv  = zeros(batch_size)
+                                        rmsg   = MPI.Recv!(yrecv, recv_id, len+2, comm)
+                                        got_data = true
+
+                                        batch_x[(local_size+1):(local_size+nums[parts]),:] = xrecv[1:nums[parts],:]
+                                        batch_y[(local_size+1):(local_size+nums[parts])]   = yrecv[1:nums[parts]]
+                                        
+                                        local_size += nums[parts]
+                                        # println(string(rank_ind-1, " got data from ", recv_id, " with first value of ", batch_y[1]))
+                                    end # tag_ind > len
+                                end # is_request
+                            end # !got_data
+                        end # nbor in part_split[rank_ind]
+                    end # for 
                 end # select_local
                 
                 grads  = gradient(gps -> inference_elbo(
